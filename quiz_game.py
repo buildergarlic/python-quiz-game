@@ -15,6 +15,7 @@ class QuizGame:
 
     def __init__(self):
         self.quizzes = get_default_quizzes()  # Quiz 객체 목록
+        self.best_score = None  # 최고 점수 (아직 한 번도 풀지 않았으면 None)
 
     def run(self):
         """프로그램의 메인 루프. '종료'를 고를 때까지 메뉴를 반복한다."""
@@ -77,6 +78,11 @@ class QuizGame:
         print()
         print(LINE)
         print(f"🏆 결과: {total}문제 중 {correct_count}문제 정답! ({score}점)")
+        if self.best_score is None or score > self.best_score:
+            self.best_score = score
+            print("🎉 새로운 최고 점수입니다!")
+        else:
+            print(f"📌 현재 최고 점수는 {self.best_score}점입니다. 다음에 다시 도전해 보세요!")
         print(LINE)
 
     def add_quiz(self):
@@ -112,4 +118,8 @@ class QuizGame:
         print(THIN_LINE)
 
     def show_score(self):
-        print("🚧 점수 확인은 준비 중인 기능입니다.")
+        """최고 점수를 보여 준다."""
+        if self.best_score is None:
+            print("📭 아직 퀴즈를 풀지 않았습니다. '1. 퀴즈 풀기'로 도전해 보세요!")
+            return
+        print(f"🏆 최고 점수: {self.best_score}점")
