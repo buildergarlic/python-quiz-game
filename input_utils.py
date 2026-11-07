@@ -15,6 +15,18 @@ def read_text(prompt):
         print("⚠️ 입력이 비어 있습니다. 내용을 입력하세요.")
 
 
+def read_yes_no(prompt):
+    """y 또는 n을 입력받아 y면 True, n이면 False를 반환한다."""
+    while True:
+        answer = input(prompt).strip().lower()
+        # 한글 자판 상태에서 y/n 키를 누르면 'ㅛ'/'ㅜ'가 입력되므로 함께 허용한다.
+        if answer in ("y", "yes", "ㅛ"):
+            return True
+        if answer in ("n", "no", "ㅜ"):
+            return False
+        print("⚠️ y 또는 n으로 입력하세요.")
+
+
 def parse_int(raw, min_value, max_value):
     """문자열을 min_value 이상 max_value 이하의 정수로 바꾼다.
 

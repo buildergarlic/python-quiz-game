@@ -9,13 +9,13 @@ QuizGame의 역할
 import random
 
 from default_quizzes import get_default_quizzes
-from input_utils import parse_int, read_int, read_text
+from input_utils import parse_int, read_int, read_text, read_yes_no
 from quiz import CHOICE_COUNT, Quiz
 
 LINE = "=" * 40
 THIN_LINE = "-" * 40
 HINT_CREDIT = 0.5  # 힌트를 보고 맞힌 문제는 배점의 절반만 인정
-MENU_ITEMS = ["퀴즈 풀기", "퀴즈 추가", "퀴즈 목록", "점수 확인", "종료"]
+MENU_ITEMS = ["퀴즈 풀기", "퀴즈 추가", "퀴즈 목록", "점수 확인", "퀴즈 삭제", "종료"]
 EXIT_MENU = len(MENU_ITEMS)  # 마지막 메뉴가 '종료'
 
 
@@ -72,6 +72,8 @@ class QuizGame:
             self.list_quizzes()
         elif choice == 4:
             self.show_score()
+        elif choice == 5:
+            self.delete_quiz()
 
     # ------------------------------------------------------------
     # 1. 퀴즈 풀기
@@ -218,6 +220,31 @@ class QuizGame:
         if self.best_score is None:
             return "없음"
         return f"{self.best_score}점"
+
+    # ------------------------------------------------------------
+    # 5. 퀴즈 삭제
+    # ------------------------------------------------------------
+    def delete_quiz(self):
+        """목록에서 번호를 골라 퀴즈를 삭제하고 파일에 반영한다."""
+        if not self.quizzes:
+            print("📭 삭제할 퀴즈가 없습니다.")
+            return
+
+        self.list_quizzes()
+        total = len(self.quizzes)
+        number = read_int(f"삭제할 퀴즈 번호 (1-{total}, 취소는 0): ", 0, total)
+        if number == 0:
+            print("↩️ 삭제를 취소했습니다.")
+            return
+
+        quiz = self.quizzes[number - 1]  # 화면 번호는 1부터, 리스트 인덱스는 0부터
+        if not read_yes_no(f"'{quiz.question}' 퀴즈를 삭제할까요? (y/n): "):
+            print("↩️ 삭제를 취소했습니다.")
+            return
+
+        self.quizzes.pop(number - 1)
+        print(f"🗑️ 퀴즈를 삭제했습니다. (남은 퀴즈 {len(self.quizzes)}개)")
+        self.save_state()
 
     # ------------------------------------------------------------
     # 파일 저장 / 불러오기
