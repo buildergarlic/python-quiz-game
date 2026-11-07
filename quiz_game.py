@@ -6,6 +6,8 @@ QuizGame의 역할
   - 데이터 저장·불러오기 요청 (실제 파일 처리는 StateStorage가 담당)
 """
 
+import random
+
 from default_quizzes import get_default_quizzes
 from input_utils import read_int, read_text
 from quiz import CHOICE_COUNT, Quiz
@@ -74,20 +76,24 @@ class QuizGame:
     # 1. 퀴즈 풀기
     # ------------------------------------------------------------
     def play_quiz(self):
-        """저장된 퀴즈를 출제하고, 모두 풀면 결과를 보여 준다."""
+        """풀 문제 수를 고르게 한 뒤 퀴즈를 무작위 순서로 출제하고, 모두 풀면 결과를 보여 준다."""
         if not self.quizzes:
             print("📭 등록된 퀴즈가 없습니다. 먼저 '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
             return
 
         total = len(self.quizzes)
-        print(f"📝 퀴즈를 시작합니다! (총 {total}문제)")
+        count = read_int(f"몇 문제를 풀까요? (1-{total}): ", 1, total)
+        # 원본 목록의 순서는 그대로 두고, 무작위로 count개를 뽑아 새 리스트를 만든다.
+        selected = random.sample(self.quizzes, count)
+
+        print(f"\n📝 퀴즈를 시작합니다! (총 {count}문제)")
         correct_count = 0
-        for number, quiz in enumerate(self.quizzes, start=1):
+        for number, quiz in enumerate(selected, start=1):
             if self._play_one(number, quiz):
                 correct_count += 1
 
-        score = round(correct_count / total * 100)
-        self._finish_game(total, correct_count, score)
+        score = round(correct_count / count * 100)
+        self._finish_game(count, correct_count, score)
 
     def _play_one(self, number, quiz):
         """퀴즈 한 문제를 출제하고, 맞혔으면 True를 반환한다."""
