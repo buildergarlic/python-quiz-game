@@ -100,7 +100,16 @@ class QuizGame:
             print("⚠️ 이미 입력한 선택지입니다. 다른 내용을 입력하세요.")
 
     def list_quizzes(self):
-        print("🚧 퀴즈 목록은 준비 중인 기능입니다.")
+        """등록된 퀴즈의 문제를 번호와 함께 보여 준다."""
+        if not self.quizzes:
+            print("📭 등록된 퀴즈가 없습니다. '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
+            return
+
+        print(f"📋 등록된 퀴즈 목록 (총 {len(self.quizzes)}개)\n")
+        print(THIN_LINE)
+        for number, quiz in enumerate(self.quizzes, start=1):
+            print(f"[{number}] {quiz.question}")
+        print(THIN_LINE)
 
     def show_score(self):
         print("🚧 점수 확인은 준비 중인 기능입니다.")
