@@ -4,14 +4,15 @@ CHOICE_COUNT = 4  # 모든 퀴즈의 선택지 개수 (정답 번호는 1~4)
 
 
 class Quiz:
-    """문제(question), 선택지(choices), 정답 번호(answer)를 가진 퀴즈 한 문제."""
+    """문제(question), 선택지(choices), 정답 번호(answer), 힌트(hint)를 가진 퀴즈 한 문제."""
 
-    def __init__(self, question, choices, answer):
+    def __init__(self, question, choices, answer, hint=""):
         # self는 '지금 만들어지는 바로 그 객체'를 가리킨다.
         # self.속성 = 값 형태로 객체마다 자기 데이터를 따로 보관한다.
         self.question = question
         self.choices = list(choices)
         self.answer = answer  # 정답 번호 (1부터 시작)
+        self.hint = hint  # 힌트가 없으면 빈 문자열
 
     def display(self, number):
         """문제 번호, 문제, 선택지를 화면에 출력한다."""
@@ -36,6 +37,7 @@ class Quiz:
             "question": self.question,
             "choices": self.choices,
             "answer": self.answer,
+            "hint": self.hint,
         }
 
     @classmethod
@@ -50,6 +52,7 @@ class Quiz:
         question = data.get("question")
         choices = data.get("choices")
         answer = data.get("answer")
+        hint = data.get("hint", "")  # 힌트 기능 이전에 저장한 파일에는 hint가 없을 수 있다.
 
         if not isinstance(question, str) or not question.strip():
             raise ValueError("question(문제)이 비어 있거나 문자열이 아닙니다.")
@@ -61,4 +64,6 @@ class Quiz:
         # bool은 int의 하위 타입이라(True == 1) 따로 걸러 낸다.
         if isinstance(answer, bool) or not isinstance(answer, int) or not 1 <= answer <= CHOICE_COUNT:
             raise ValueError(f"answer(정답)는 1-{CHOICE_COUNT} 사이의 정수여야 합니다.")
-        return cls(question, choices, answer)
+        if not isinstance(hint, str):
+            raise ValueError("hint(힌트)는 문자열이어야 합니다.")
+        return cls(question, choices, answer, hint)
