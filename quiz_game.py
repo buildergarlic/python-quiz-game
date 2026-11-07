@@ -2,11 +2,12 @@
 
 QuizGame의 역할
   - 메뉴 표시와 선택한 기능 실행
-  - 퀴즈 풀기 / 추가 / 목록 / 점수 확인
+  - 퀴즈 풀기 / 추가 / 목록 / 점수 확인 / 삭제 / 게임 기록
   - 데이터 저장·불러오기 요청 (실제 파일 처리는 StateStorage가 담당)
 """
 
 import random
+from datetime import datetime
 
 from default_quizzes import get_default_quizzes
 from input_utils import parse_int, read_int, read_text, read_yes_no
@@ -15,17 +16,19 @@ from quiz import CHOICE_COUNT, Quiz
 LINE = "=" * 40
 THIN_LINE = "-" * 40
 HINT_CREDIT = 0.5  # 힌트를 보고 맞힌 문제는 배점의 절반만 인정
-MENU_ITEMS = ["퀴즈 풀기", "퀴즈 추가", "퀴즈 목록", "점수 확인", "퀴즈 삭제", "종료"]
+HISTORY_DISPLAY_LIMIT = 10  # 게임 기록 화면에 보여 줄 최근 기록 수
+MENU_ITEMS = ["퀴즈 풀기", "퀴즈 추가", "퀴즈 목록", "점수 확인", "퀴즈 삭제", "게임 기록", "종료"]
 EXIT_MENU = len(MENU_ITEMS)  # 마지막 메뉴가 '종료'
 
 
 class QuizGame:
-    """퀴즈 목록과 최고 점수를 가지고, 메뉴에 따라 각 기능을 실행하는 클래스."""
+    """퀴즈 목록, 최고 점수, 게임 기록을 가지고 메뉴에 따라 각 기능을 실행하는 클래스."""
 
     def __init__(self, storage):
         self.storage = storage  # state.json 저장/불러오기 담당 (StateStorage 객체)
         self.quizzes = []  # Quiz 객체 목록
         self.best_score = None  # 최고 점수 (아직 한 번도 풀지 않았으면 None)
+        self.history = []  # 게임 기록 목록 (한 판 = 딕셔너리 하나)
         self.can_save = True  # 기존 파일을 보호해야 할 때 False (저장하지 않음)
 
     # ------------------------------------------------------------
@@ -74,6 +77,8 @@ class QuizGame:
             self.show_score()
         elif choice == 5:
             self.delete_quiz()
+        elif choice == 6:
+            self.show_history()
 
     # ------------------------------------------------------------
     # 1. 퀴즈 풀기
@@ -143,7 +148,7 @@ class QuizGame:
             print(error)
 
     def _finish_game(self, total, correct_count, hints_used, score):
-        """게임 결과를 출력하고, 최고 점수를 갱신한 뒤 저장한다."""
+        """게임 결과를 출력하고, 최고 점수와 게임 기록을 갱신한 뒤 저장한다."""
         is_new_best = self._update_best_score(score)
         print()
         print(LINE)
@@ -155,6 +160,14 @@ class QuizGame:
         else:
             print(f"📌 현재 최고 점수는 {self.best_score}점입니다. 다음에 다시 도전해 보세요!")
         print(LINE)
+
+        self.history.append({
+            "played_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "total": total,
+            "correct": correct_count,
+            "hints_used": hints_used,
+            "score": score,
+        })
         self.save_state()
 
     def _update_best_score(self, score):
@@ -209,11 +222,27 @@ class QuizGame:
     # 4. 점수 확인
     # ------------------------------------------------------------
     def show_score(self):
-        """최고 점수를 보여 준다."""
+        """최고 점수와, 그 점수를 기록한 게임의 정답 수를 보여 준다."""
         if self.best_score is None:
             print("📭 아직 퀴즈를 풀지 않았습니다. '1. 퀴즈 풀기'로 도전해 보세요!")
             return
-        print(f"🏆 최고 점수: {self.best_score}점")
+
+        record = self._find_best_record()
+        if record is None:
+            print(f"🏆 최고 점수: {self.best_score}점")
+        else:
+            print(
+                f"🏆 최고 점수: {self.best_score}점 "
+                f"({record['total']}문제 중 {record['correct']}문제 정답, {record['played_at']})"
+            )
+        print(f"🎮 기록된 게임 수: {len(self.history)}회 ('6. 게임 기록'에서 확인)")
+
+    def _find_best_record(self):
+        """게임 기록 중 최고 점수를 처음 달성한 기록을 찾는다. 없으면 None을 반환한다."""
+        for record in self.history:
+            if record["score"] == self.best_score:
+                return record
+        return None
 
     def _best_score_text(self):
         """최고 점수를 화면 표시용 문자열로 바꾼다. (예: '80점', '없음')"""
@@ -247,6 +276,25 @@ class QuizGame:
         self.save_state()
 
     # ------------------------------------------------------------
+    # 6. 게임 기록
+    # ------------------------------------------------------------
+    def show_history(self):
+        """최근 게임 기록을 최신순으로 보여 준다."""
+        if not self.history:
+            print("📭 아직 게임 기록이 없습니다. '1. 퀴즈 풀기'로 첫 기록을 남겨 보세요!")
+            return
+
+        recent = self.history[-HISTORY_DISPLAY_LIMIT:]  # 슬라이싱: 마지막 최대 10개
+        print(f"📜 게임 기록 (최근 {len(recent)}회 / 전체 {len(self.history)}회)\n")
+        print(THIN_LINE)
+        for record in reversed(recent):  # 최신 기록이 맨 위에 오도록 뒤집어서 출력
+            print(
+                f"{record['played_at']} | {record['total']}문제 중 {record['correct']}문제 정답"
+                f" | 힌트 {record['hints_used']}회 | {record['score']}점"
+            )
+        print(THIN_LINE)
+
+    # ------------------------------------------------------------
     # 파일 저장 / 불러오기
     # ------------------------------------------------------------
     def load_state(self):
@@ -255,6 +303,7 @@ class QuizGame:
         if status == "loaded":
             self.quizzes = data["quizzes"]
             self.best_score = data["best_score"]
+            self.history = data["history"]
             return (
                 "📂 저장된 데이터를 불러왔습니다. "
                 f"(퀴즈 {len(self.quizzes)}개, 최고점수 {self._best_score_text()})"
@@ -263,6 +312,7 @@ class QuizGame:
         # 파일이 없거나 쓸 수 없는 상태면 기본 퀴즈로 시작한다.
         self.quizzes = get_default_quizzes()
         self.best_score = None
+        self.history = []
         if status == "missing":
             self.save_state()
             return f"📂 저장된 데이터가 없어 기본 퀴즈 {len(self.quizzes)}개로 시작합니다."
@@ -280,11 +330,11 @@ class QuizGame:
         )
 
     def save_state(self):
-        """현재 퀴즈 목록과 최고 점수를 state.json에 저장한다. 성공하면 True를 반환한다."""
+        """현재 퀴즈 목록, 최고 점수, 게임 기록을 state.json에 저장한다. 성공하면 True를 반환한다."""
         if not self.can_save:
             return False
         try:
-            self.storage.save(self.quizzes, self.best_score)
+            self.storage.save(self.quizzes, self.best_score, self.history)
         except OSError as error:
             print(f"⚠️ 데이터를 파일에 저장하지 못했습니다: {error}")
             return False
