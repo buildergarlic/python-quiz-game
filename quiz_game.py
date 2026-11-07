@@ -1,5 +1,6 @@
 """퀴즈 게임 전체 흐름을 관리하는 QuizGame 클래스."""
 
+from default_quizzes import get_default_quizzes
 from input_utils import read_int
 
 LINE = "=" * 40
@@ -9,6 +10,9 @@ EXIT_MENU = len(MENU_ITEMS)  # 마지막 메뉴가 '종료'
 
 class QuizGame:
     """메뉴를 보여 주고, 사용자가 고른 기능을 실행하는 게임 관리 클래스."""
+
+    def __init__(self):
+        self.quizzes = get_default_quizzes()  # Quiz 객체 목록
 
     def run(self):
         """프로그램의 메인 루프. '종료'를 고를 때까지 메뉴를 반복한다."""
