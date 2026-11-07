@@ -1,4 +1,10 @@
-"""퀴즈 게임 전체 흐름을 관리하는 QuizGame 클래스."""
+"""퀴즈 게임 전체 흐름을 관리하는 QuizGame 클래스.
+
+QuizGame의 역할
+  - 메뉴 표시와 선택한 기능 실행
+  - 퀴즈 풀기 / 추가 / 목록 / 점수 확인
+  - 데이터 저장·불러오기 요청 (실제 파일 처리는 StateStorage가 담당)
+"""
 
 from default_quizzes import get_default_quizzes
 from input_utils import read_int, read_text
@@ -11,7 +17,7 @@ EXIT_MENU = len(MENU_ITEMS)  # 마지막 메뉴가 '종료'
 
 
 class QuizGame:
-    """메뉴를 보여 주고, 사용자가 고른 기능을 실행하는 게임 관리 클래스."""
+    """퀴즈 목록과 최고 점수를 가지고, 메뉴에 따라 각 기능을 실행하는 클래스."""
 
     def __init__(self, storage):
         self.storage = storage  # state.json 저장/불러오기 담당 (StateStorage 객체)
@@ -19,6 +25,9 @@ class QuizGame:
         self.best_score = None  # 최고 점수 (아직 한 번도 풀지 않았으면 None)
         self.can_save = True  # 기존 파일을 보호해야 할 때 False (저장하지 않음)
 
+    # ------------------------------------------------------------
+    # 실행 / 메뉴
+    # ------------------------------------------------------------
     def run(self):
         """프로그램의 메인 루프. '종료'를 고를 때까지 메뉴를 반복한다."""
         message = self.load_state()
@@ -61,39 +70,65 @@ class QuizGame:
         elif choice == 4:
             self.show_score()
 
+    # ------------------------------------------------------------
+    # 1. 퀴즈 풀기
+    # ------------------------------------------------------------
     def play_quiz(self):
-        """저장된 퀴즈를 순서대로 출제하고, 모두 풀면 결과를 보여 준다."""
+        """저장된 퀴즈를 출제하고, 모두 풀면 결과를 보여 준다."""
         if not self.quizzes:
             print("📭 등록된 퀴즈가 없습니다. 먼저 '2. 퀴즈 추가'에서 퀴즈를 등록해 주세요.")
             return
 
         total = len(self.quizzes)
-        correct_count = 0
         print(f"📝 퀴즈를 시작합니다! (총 {total}문제)")
+        correct_count = 0
         for number, quiz in enumerate(self.quizzes, start=1):
-            print()
-            print(THIN_LINE)
-            quiz.display(number)
-            max_choice = len(quiz.choices)
-            choice = read_int(f"정답 입력 (1-{max_choice}): ", 1, max_choice)
-            if quiz.is_correct(choice):
+            if self._play_one(number, quiz):
                 correct_count += 1
-                print("✅ 정답입니다!")
-            else:
-                print(f"❌ 오답입니다. 정답은 {quiz.answer}번 ({quiz.correct_choice_text()})입니다.")
 
         score = round(correct_count / total * 100)
+        self._finish_game(total, correct_count, score)
+
+    def _play_one(self, number, quiz):
+        """퀴즈 한 문제를 출제하고, 맞혔으면 True를 반환한다."""
+        print()
+        print(THIN_LINE)
+        quiz.display(number)
+        choice = self._ask_answer(quiz)
+        if quiz.is_correct(choice):
+            print("✅ 정답입니다!")
+            return True
+        print(f"❌ 오답입니다. 정답은 {quiz.answer}번 ({quiz.correct_choice_text()})입니다.")
+        return False
+
+    def _ask_answer(self, quiz):
+        """정답 번호(1~선택지 개수)를 입력받는다."""
+        max_choice = len(quiz.choices)
+        return read_int(f"정답 입력 (1-{max_choice}): ", 1, max_choice)
+
+    def _finish_game(self, total, correct_count, score):
+        """게임 결과를 출력하고, 최고 점수를 갱신한 뒤 저장한다."""
+        is_new_best = self._update_best_score(score)
         print()
         print(LINE)
         print(f"🏆 결과: {total}문제 중 {correct_count}문제 정답! ({score}점)")
-        if self.best_score is None or score > self.best_score:
-            self.best_score = score
+        if is_new_best:
             print("🎉 새로운 최고 점수입니다!")
         else:
             print(f"📌 현재 최고 점수는 {self.best_score}점입니다. 다음에 다시 도전해 보세요!")
         print(LINE)
         self.save_state()
 
+    def _update_best_score(self, score):
+        """점수가 최고 점수보다 높으면 갱신하고 True를, 아니면 False를 반환한다."""
+        if self.best_score is None or score > self.best_score:
+            self.best_score = score
+            return True
+        return False
+
+    # ------------------------------------------------------------
+    # 2. 퀴즈 추가
+    # ------------------------------------------------------------
     def add_quiz(self):
         """문제, 선택지 4개, 정답 번호를 입력받아 새 퀴즈를 등록한다."""
         print("📌 새로운 퀴즈를 추가합니다.\n")
@@ -115,6 +150,9 @@ class QuizGame:
                 return choice
             print("⚠️ 이미 입력한 선택지입니다. 다른 내용을 입력하세요.")
 
+    # ------------------------------------------------------------
+    # 3. 퀴즈 목록
+    # ------------------------------------------------------------
     def list_quizzes(self):
         """등록된 퀴즈의 문제를 번호와 함께 보여 준다."""
         if not self.quizzes:
@@ -127,6 +165,9 @@ class QuizGame:
             print(f"[{number}] {quiz.question}")
         print(THIN_LINE)
 
+    # ------------------------------------------------------------
+    # 4. 점수 확인
+    # ------------------------------------------------------------
     def show_score(self):
         """최고 점수를 보여 준다."""
         if self.best_score is None:
@@ -134,14 +175,25 @@ class QuizGame:
             return
         print(f"🏆 최고 점수: {self.best_score}점")
 
+    def _best_score_text(self):
+        """최고 점수를 화면 표시용 문자열로 바꾼다. (예: '80점', '없음')"""
+        if self.best_score is None:
+            return "없음"
+        return f"{self.best_score}점"
+
+    # ------------------------------------------------------------
+    # 파일 저장 / 불러오기
+    # ------------------------------------------------------------
     def load_state(self):
         """state.json에서 데이터를 불러오고, 첫 화면에 보여 줄 안내 문구를 반환한다."""
         status, data = self.storage.load()
         if status == "loaded":
             self.quizzes = data["quizzes"]
             self.best_score = data["best_score"]
-            best_text = "없음" if self.best_score is None else f"{self.best_score}점"
-            return f"📂 저장된 데이터를 불러왔습니다. (퀴즈 {len(self.quizzes)}개, 최고점수 {best_text})"
+            return (
+                "📂 저장된 데이터를 불러왔습니다. "
+                f"(퀴즈 {len(self.quizzes)}개, 최고점수 {self._best_score_text()})"
+            )
 
         # 파일이 없거나 쓸 수 없는 상태면 기본 퀴즈로 시작한다.
         self.quizzes = get_default_quizzes()
