@@ -6,6 +6,11 @@ __pycache__/
 .venv/
 venv/
 
+# 실행할 때 만들어지는 데이터 파일 (각자 PC의 퀴즈·점수 기록이므로 저장소에 올리지 않는다)
+state.json
+state.json.bak
+state.json.tmp
+
 # OS / 에디터 설정 파일
 .DS_Store
 Thumbs.db

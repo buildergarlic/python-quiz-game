@@ -29,3 +29,36 @@ class Quiz:
     def correct_choice_text(self):
         """정답 선택지의 내용을 반환한다. (정답 번호는 1부터, 리스트 인덱스는 0부터 시작)"""
         return self.choices[self.answer - 1]
+
+    def to_dict(self):
+        """JSON 파일로 저장할 수 있도록 딕셔너리로 바꾼다."""
+        return {
+            "question": self.question,
+            "choices": self.choices,
+            "answer": self.answer,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """state.json에서 읽은 딕셔너리로 Quiz 객체를 만든다.
+
+        cls는 Quiz 클래스 자신을 가리킨다. (cls(...) == Quiz(...))
+        데이터 형식이 잘못되었으면 ValueError를 발생시킨다.
+        """
+        if not isinstance(data, dict):
+            raise ValueError("퀴즈 데이터가 딕셔너리 형태가 아닙니다.")
+        question = data.get("question")
+        choices = data.get("choices")
+        answer = data.get("answer")
+
+        if not isinstance(question, str) or not question.strip():
+            raise ValueError("question(문제)이 비어 있거나 문자열이 아닙니다.")
+        if not isinstance(choices, list) or len(choices) != CHOICE_COUNT:
+            raise ValueError(f"choices(선택지)는 {CHOICE_COUNT}개짜리 목록이어야 합니다.")
+        for choice in choices:
+            if not isinstance(choice, str) or not choice.strip():
+                raise ValueError("choices에 비어 있거나 문자열이 아닌 값이 있습니다.")
+        # bool은 int의 하위 타입이라(True == 1) 따로 걸러 낸다.
+        if isinstance(answer, bool) or not isinstance(answer, int) or not 1 <= answer <= CHOICE_COUNT:
+            raise ValueError(f"answer(정답)는 1-{CHOICE_COUNT} 사이의 정수여야 합니다.")
+        return cls(question, choices, answer)
