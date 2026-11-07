@@ -26,7 +26,7 @@
 
 ```bash
 # 1) 저장소 복제
-git clone https://github.com/<GitHub-아이디>/python-quiz-game.git
+git clone https://github.com/buildergarlic/python-quiz-game.git
 cd python-quiz-game
 
 # 2) 실행 (Windows)
