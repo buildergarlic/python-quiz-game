@@ -53,6 +53,7 @@ class StateStorage:
             "best_score": best_score,
             "history": history,
         }
+        self.path.parent.mkdir(parents=True, exist_ok=True)  # 저장 폴더가 없으면 만든다.
         with open(self.temp_path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
         os.replace(self.temp_path, self.path)

@@ -1,0 +1,17 @@
+# Docker Compose 설정 — 긴 docker 명령어 옵션을 파일에 적어 두고 짧은 명령으로 실행한다.
+#
+# 빌드: docker compose build
+# 실행: docker compose run --rm quiz
+name: python-quiz-game # 프로젝트 이름 고정 → 볼륨 이름이 항상 python-quiz-game_quiz-data가 된다
+
+services:
+  quiz:
+    build: .
+    image: python-quiz-game
+    stdin_open: true # docker run -i : 키보드 입력을 받는다
+    tty: true # docker run -t : 터미널 화면처럼 동작한다
+    volumes:
+      - quiz-data:/data # 퀴즈·점수 데이터(state.json)를 컨테이너 밖 볼륨에 저장한다
+
+volumes:
+  quiz-data: # 이름 있는 볼륨: 컨테이너를 지워도 남는다 (docker compose down -v 로만 삭제)
