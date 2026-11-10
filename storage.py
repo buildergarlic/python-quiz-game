@@ -27,6 +27,7 @@ class StateStorage:
         - ("corrupted", None) : JSON 문법이 깨졌거나 데이터 구조가 올바르지 않음
         - ("error", None)     : 권한 문제 등으로 파일을 읽지 못함
         """
+        # 1단계: 파일을 UTF-8로 열어 JSON 문법대로 읽는다.
         try:
             with open(self.path, "r", encoding="utf-8") as file:
                 raw = json.load(file)
@@ -34,9 +35,10 @@ class StateStorage:
             return "missing", None
         except (json.JSONDecodeError, UnicodeDecodeError):
             return "corrupted", None
-        except OSError:
+        except OSError:  # 권한 없음, 경로가 폴더임, 디스크 오류 등
             return "error", None
 
+        # 2단계: 읽은 값의 구조·타입·범위를 검사하고 Quiz 객체로 바꾼다.
         try:
             return "loaded", self._parse(raw)
         except ValueError:
@@ -48,14 +50,18 @@ class StateStorage:
         임시 파일에 먼저 끝까지 쓴 뒤 os.replace()로 한 번에 바꿔 끼운다.
         저장 도중 프로그램이 멈춰도 기존 state.json이 반쯤 쓰인 채로 망가지지 않는다.
         """
+        # 1단계: Quiz 객체를 JSON으로 바꿀 수 있는 딕셔너리로 만든다.
         data = {
             "quizzes": [quiz.to_dict() for quiz in quizzes],
             "best_score": best_score,
             "history": history,
         }
-        self.path.parent.mkdir(parents=True, exist_ok=True)  # 저장 폴더가 없으면 만든다.
+        # 2단계: 저장 폴더가 없으면 만든다. (Docker 볼륨 등 다른 경로를 쓸 때)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        # 3단계: 임시 파일(state.json.tmp)에 끝까지 쓴다. 이 단계에서 실패해도 state.json은 그대로다.
         with open(self.temp_path, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
+        # 4단계: 다 쓴 임시 파일을 state.json 자리로 한 번에 바꿔 끼운다. (같은 폴더 안에서는 원자적)
         os.replace(self.temp_path, self.path)
 
     def backup_corrupted_file(self):
