@@ -4,6 +4,7 @@
 """
 
 import os
+import signal
 from pathlib import Path
 
 from quiz_game import QuizGame
@@ -18,7 +19,19 @@ DEFAULT_STATE_PATH = Path(__file__).resolve().parent / "state.json"
 STATE_PATH = Path(os.environ.get("QUIZ_STATE_PATH") or DEFAULT_STATE_PATH)
 
 
+def handle_terminate(signum, frame):
+    """종료 요청(SIGTERM)을 Ctrl+C와 똑같이 처리해 '저장 후 안전 종료'로 끝나게 한다.
+
+    kill 명령이나 서비스 관리자가 보내는 SIGTERM은 처리기가 없으면 저장 없이 바로 종료된다.
+    KeyboardInterrupt로 바꿔 올리면 QuizGame.run()이 Ctrl+C와 같은 경로로 저장한 뒤 종료한다.
+    저장하는 동안 SIGTERM이 또 오면 저장이 중간에 끊기지 않도록 그 뒤로는 무시한다.
+    """
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    raise KeyboardInterrupt
+
+
 def main():
+    signal.signal(signal.SIGTERM, handle_terminate)
     storage = StateStorage(STATE_PATH)
     game = QuizGame(storage)
     game.run()
