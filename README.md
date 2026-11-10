@@ -334,12 +334,136 @@ $ python main.py
 
 ## 8. Git 작업 흐름
 
-- **커밋 메시지 규칙**: `Feat`(기능), `Refactor`(구조 개선), `Docs`(문서), `Chore`(설정) + 제목에 변경 요약, 본문에 세부 변경 사항
-- **브랜치**
-  - `main` — 항상 실행 가능한 상태 유지
-  - `feature/play-quiz` — 퀴즈 풀기 기능 개발 후 `main`에 병합
-  - `feature/bonus` — 보너스 기능(랜덤, 문제 수 선택, 힌트, 삭제, 기록) 개발 후 `main`에 병합
-  - 병합은 `git merge --no-ff`로 수행해 `git log --graph`에서 브랜치 작업 흔적이 보이도록 했습니다.
+### 8-1. 원격 저장소·커밋·브랜치 증빙
+
+| 항목 | 내용 (클릭해서 GitHub에서 직접 확인) |
+|---|---|
+| 원격 저장소 | <https://github.com/buildergarlic/python-quiz-game> |
+| 커밋 이력 | <https://github.com/buildergarlic/python-quiz-game/commits/main> |
+| 브랜치 목록 | <https://github.com/buildergarlic/python-quiz-game/branches> — `main`, `feature/play-quiz`, `feature/bonus`, `feature/eval-improvements` |
+| 브랜치·병합 그래프 | <https://github.com/buildergarlic/python-quiz-game/network> |
+| 커밋 수 | 병합을 뺀 커밋 **28개** (요구 기준 10개 이상), `--no-ff` 병합 커밋 **4개** (아래 출력 기준) |
+
+아래는 이 증빙을 추가하기 직전(2026-11-10)의 실제 출력입니다. 이후 커밋은 위 링크에서 확인할 수 있습니다.
+
+```text
+$ git remote -v
+origin	https://github.com/buildergarlic/python-quiz-game (fetch)
+origin	https://github.com/buildergarlic/python-quiz-game (push)
+
+$ git branch -a
+  feature/bonus
+  feature/eval-improvements
+  feature/play-quiz
+* main
+  remotes/origin/feature/bonus
+  remotes/origin/feature/eval-improvements
+  remotes/origin/feature/play-quiz
+  remotes/origin/main
+
+$ git rev-list --count --no-merges main   # 병합을 뺀 커밋 수
+28
+
+$ git rev-list --count --merges main      # 병합 커밋 수
+4
+
+$ git log --oneline --graph
+*   f4d25b6 Merge branch 'feature/eval-improvements'
+|\  
+| * 461cda3 Docs: 대량 데이터 분석, 테스트, 클래스 계약, 호출 흐름, 복구 절차 보강
+| * 246544f CI: Docker 검사에 단위 테스트와 대량 데이터 측정 추가
+| * 6f8ed1b Chore: 대량 데이터 성능 측정 스크립트 추가 (tools/benchmark.py)
+| * 5b88aac Test: 단위 테스트 48개 추가 (입력 검증, 점수 계산, 저장/복구, 종료 경로)
+| * 50a7132 Feat: 종료 요청(SIGTERM)도 저장 후 안전 종료하도록 처리
+| * 4d9b346 Refactor: StateStorage 저장·불러오기 순서를 단계별 주석으로 정리
+|/  
+* 494c77c Docs: README에 Docker 실행 가이드 추가
+* 9d142c4 CI: push·PR마다 Docker 재현성 자동 검사 (GitHub Actions)
+* 07f0485 Feat: Docker 실행 환경 구성 (Dockerfile, compose.yaml, .dockerignore)
+* 76a15af Docs: README 실행 방법의 clone 주소를 실제 저장소 주소로 수정
+*   373aac4 Merge: GitHub 원격 저장소 초기 커밋과 로컬 이력 병합
+|\  
+| * 6a29bf8 Initial commit
+* 196e429 Docs: README 작성 (개요, 주제 선정 이유, 실행 방법, 기능, 파일 구조, state.json 설명)
+* 6f8a92d Docs: 실행 화면 스크린샷 추가
+*   d5a9f6a Merge branch 'feature/bonus'
+|\  
+| * 5869dbc Feat: 게임 기록 히스토리 저장 및 조회 기능 추가 (보너스)
+| * 850e16c Feat: 퀴즈 삭제 기능 추가 (보너스)
+| * df942bf Feat: 힌트 기능 추가 (힌트를 보고 맞히면 절반 점수)
+| * f8ebdc9 Feat: 랜덤 출제 및 풀 문제 수 선택 기능 추가 (보너스)
+|/  
+* 6b341b2 Refactor: QuizGame 책임 분리 (문제 출제·정답 입력·결과 처리 메서드 분리)
+* eb7c1ef Feat: state.json 저장/불러오기 구현 (파일 없음·손상 대응)
+* 289e654 Feat: 최고 점수 확인 및 갱신 기능 구현
+* 76e3da1 Feat: 퀴즈 목록 보기 기능 구현
+* ff4d1a3 Feat: 퀴즈 추가 기능 구현 (문제·선택지·정답 입력 검증)
+*   609c113 Merge branch 'feature/play-quiz'
+|\  
+| * c1c4eee Feat: 퀴즈 결과 표시 및 퀴즈가 없는 경우 처리
+| * 438f79a Feat: 퀴즈 풀기 기능 구현 (출제, 정답 입력, 정답/오답 안내)
+|/  
+* bd9e00b Feat: 기본 퀴즈 데이터 8개 추가 (주제: Python & Git 기초)
+* e822db5 Feat: Quiz 클래스 구현 (문제 출력, 정답 확인)
+* 3a6a613 Feat: 메인 메뉴 출력 및 메뉴 선택 입력 검증 구현
+* 900acce Chore: 프로젝트 초기 설정 (.gitignore, README.md 추가)
+```
+
+![git log --graph 캡처](docs/screenshots/git_graph.png)
+
+직접 확인하는 방법:
+
+```bash
+git clone https://github.com/buildergarlic/python-quiz-game.git
+cd python-quiz-game
+git log --oneline --graph --all
+git rev-list --count --no-merges main
+```
+
+### 8-2. 커밋 메시지 규칙과 실제 예시
+
+- **규칙**: `Feat`(기능), `Refactor`(구조 개선), `Test`(테스트), `Docs`(문서), `CI`(자동 검사), `Chore`(설정·도구) + 제목에 변경 요약, 본문에 세부 변경 사항
+- **실제 커밋 예시** (`git log -1 <해시>`로 같은 내용을 볼 수 있습니다)
+
+```text
+eb7c1ef Feat: state.json 저장/불러오기 구현 (파일 없음·손상 대응)
+
+- StateStorage 클래스 추가: 프로젝트 루트 state.json을 UTF-8로 읽고 쓰기
+- 임시 파일에 쓴 뒤 os.replace()로 교체해 저장 중 파일 손상 방지
+- Quiz.to_dict()/from_dict(): 객체 <-> JSON 딕셔너리 변환 및 형식 검증
+- 파일 없음: 기본 퀴즈로 시작 후 저장
+- JSON 손상/구조 오류: state.json.bak으로 백업 후 기본 데이터로 복구
+- 읽기 오류: 기존 파일 보호를 위해 해당 실행에서는 저장하지 않음
+```
+
+```text
+6b341b2 Refactor: QuizGame 책임 분리 (문제 출제·정답 입력·결과 처리 메서드 분리)
+
+- 길어진 play_quiz()를 역할별 메서드로 분리
+  - _play_one(): 한 문제 출제 및 정답/오답 안내
+  - _ask_answer(): 정답 번호 입력
+  - _finish_game(): 결과 출력 및 저장
+  - _update_best_score(): 최고 점수 비교/갱신
+- 동작 변화 없음
+```
+
+```text
+50a7132 Feat: 종료 요청(SIGTERM)도 저장 후 안전 종료하도록 처리
+
+- kill 명령·서비스 관리자가 보내는 SIGTERM을 KeyboardInterrupt로 바꿔
+  Ctrl+C와 같은 '저장 후 안전 종료' 경로(QuizGame.run)를 타게 함
+- 저장 중 SIGTERM이 다시 오면 무시해 저장이 중간에 끊기지 않게 함
+```
+
+### 8-3. 브랜치 전략
+
+- `main` — 항상 실행 가능한 상태 유지
+- `feature/play-quiz` — 퀴즈 풀기 기능 개발 후 `main`에 병합 (`609c113`)
+- `feature/bonus` — 보너스 기능(랜덤, 문제 수 선택, 힌트, 삭제, 기록) 개발 후 `main`에 병합 (`d5a9f6a`)
+- `feature/eval-improvements` — 사전평가 보완(SIGTERM 처리, 단위 테스트, 대량 데이터 분석) 개발 후 `main`에 병합 (`f4d25b6`)
+- 병합은 `git merge --no-ff`로 수행해 `git log --graph`에서 브랜치 작업 흔적이 보이도록 했습니다. (`373aac4`는 GitHub에서 README와 함께 만든 원격 저장소의 첫 커밋과 로컬 이력을 합친 병합입니다.)
+
+### 8-4. 사용한 Git 명령어
 
 | 명령어 | 이 프로젝트에서 사용한 곳 |
 |---|---|
