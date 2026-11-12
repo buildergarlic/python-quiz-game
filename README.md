@@ -2,6 +2,9 @@
 
 [![Docker 재현성 검사](https://github.com/buildergarlic/python-quiz-game/actions/workflows/docker.yml/badge.svg)](https://github.com/buildergarlic/python-quiz-game/actions/workflows/docker.yml)
 
+> **코디세이 AI 올인원 과정 · Windows 11 사용자 안내**  
+> 처음 설치하는 분은 [12. 완전 초보를 위한 설치부터 따라하기 플레이북](#12-완전-초보를-위한-설치부터-따라하기-플레이북)부터 시작하세요. 클릭할 위치, 복사할 명령어, 단계별 성공 확인까지 순서대로 안내합니다.
+
 터미널에서 동작하는 4지선다 퀴즈 게임입니다.
 메뉴에서 번호를 골라 퀴즈를 풀고, 직접 퀴즈를 추가·삭제하고, 최고 점수와 게임 기록을 확인할 수 있습니다.
 프로그램을 종료했다가 다시 실행해도 퀴즈와 점수는 `state.json` 파일에 저장되어 그대로 남아 있습니다.
@@ -29,6 +32,8 @@
 - **함께 쓸 수 있다.** 같은 과정을 밟는 동료들도 바로 풀어 보며 복습할 수 있는 주제입니다.
 
 ## 3. 실행 방법
+
+Windows 11에서 Docker를 처음 사용하는 과정 참여자는 [12장 설치부터 따라하기 플레이북](#12-완전-초보를-위한-설치부터-따라하기-플레이북)을 이용하세요.
 
 두 가지 방법이 있습니다. **PC 환경과 상관없이 똑같이 실행하려면 방법 1(Docker)을 권장합니다.**
 
@@ -518,7 +523,7 @@ docker compose run --rm quiz  # 게임 실행
 ```
 
 - `run --rm`: 게임이 끝나면 컨테이너를 지웁니다. 데이터는 볼륨(`python-quiz-game_quiz-data`)에 남습니다.
-- `docker compose up`은 쓰지 않습니다. `up`은 서버를 백그라운드로 띄우는 용도라 키보드 입력을 주고받기 어렵습니다.
+- 이 게임은 터미널에서 키보드 입력을 주고받기 위해 `docker compose run --rm quiz`로 실행합니다.
 
 #### 방법 B. docker 명령어만 사용
 
@@ -582,7 +587,7 @@ docker run --rm -it -v quiz-data:/data python-quiz-game
 | 3 | `docker compose run --rm quiz` (처음 실행) | `📂 저장된 데이터가 없어 기본 퀴즈 8개로 시작합니다.` |
 | 4 | 메뉴 `2`로 퀴즈 1개 추가 → `7` 종료 → 3번 명령 다시 실행 | `📂 저장된 데이터를 불러왔습니다. (퀴즈 9개, ...)` |
 | 5 | 입력 없이 자동 확인: `printf '7\n' \| docker compose run --rm -T quiz` (PowerShell: `"7" \| docker compose run --rm -T quiz`) | 메뉴 출력 후 `👋 게임을 종료합니다. 다음에 또 만나요!` |
-| 6 | 처음 상태로 되돌리기: `docker compose down -v` | `Volume python-quiz-game_quiz-data Removed` |
+| 선택 | **데이터를 모두 지울 때만** 처음 상태로 되돌리기: `docker compose down -v` | `Volume python-quiz-game_quiz-data Removed` — 퀴즈·점수·게임 기록 삭제. 설치 확인에는 필요하지 않습니다. |
 
 ### 9-7. 다른 Python 버전으로 실행해 보기
 
@@ -610,7 +615,7 @@ docker run --rm -it -v quiz-data:/data python-quiz-game:py3.10
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | `Cannot connect to the Docker daemon` / `error during connect` | Docker가 실행 중이 아님 | Docker Desktop을 실행하고 다시 시도 |
-| `the input device is not a TTY` | `-it` 없이 실행했거나 Git Bash 사용 | `-it`를 붙이거나, PowerShell을 쓰거나, 명령 앞에 `winpty` |
+| `the input device is not a TTY` | 파이프·출력 리디렉션 등 실제 터미널이 아닌 환경에서 TTY를 요청함, 또는 터미널 호환 문제 | 게임은 PowerShell 창에서 `docker compose run --rm quiz`를 직접 실행. 입력을 전달하는 자동 검사에서는 `-T` 사용 |
 | 메뉴는 나오는데 입력이 안 됨 | `-i` 옵션이 빠짐 | `docker run --rm -it ...` |
 | 한글·이모지가 깨짐 (Windows) | 콘솔 문자 코드가 UTF-8이 아님 | Windows Terminal 사용, 또는 `chcp 65001` 실행 후 다시 시작 |
 | 다시 실행했더니 퀴즈·점수가 사라짐 | `-v` 옵션 빠짐, 방법 A·B를 섞어 씀, `down -v` 실행 | 9-3, 9-4 참고 |
@@ -723,3 +728,418 @@ docker compose run --rm -T -v "$(pwd):/src:ro" -w /src quiz python tools/benchma
 - **출제**: `ORDER BY RANDOM() LIMIT 10`(100,000개에서 8.8ms). 이 방식도 전체를 한 번 훑기 때문에, 더 커지면 id 범위에서 무작위 번호를 뽑아 바로 조회합니다.
 - **대가**: 메모장으로 열어 볼 수 없게 되어 가독성을 잃고, 표 구조를 바꿀 때 변환 작업(마이그레이션)이 필요합니다. 그래서 1,000개 수준인 지금은 JSON을 유지하고, 위 표의 기준을 넘을 때 전환합니다.
 - **전환 순서**: ① `state.json`을 한 번 읽어 표에 넣는 변환 스크립트 → ② `StateStorage` 대신 `add`/`delete`/`page`/`search`/`sample` 메서드를 가진 저장 클래스 → ③ `QuizGame`의 목록·삭제·출제가 그 메서드를 쓰도록 수정. `Quiz`와 입력 검증은 그대로입니다. ([5장 확장 시나리오](#저장-방식을-바꾸고-싶을-때-확장-시나리오))
+
+## 12. 완전 초보를 위한 설치부터 따라하기 플레이북
+
+**Windows 11 · 코디세이 AI 올인원 과정 참여자용**  
+확인일: **2026-11-12**
+
+목표는 내 Windows 11 컴퓨터에서 Docker로 퀴즈 게임을 실행하고, 문제를 추가한 뒤 게임을 껐다 켜도 기록이 남는 것을 확인하는 것입니다.
+
+아래 과정에서는 **GitHub에서 ZIP 다운로드 → Docker Compose로 실행**하는 한 가지 방법을 사용합니다. 명령어는 **Windows PowerShell**에 입력합니다. Windows에 Python이나 Git을 따로 설치하거나 Ubuntu 사용자 계정을 만들 필요는 없습니다.
+
+> **명령어 입력 규칙**  
+> 회색 코드 상자의 내용을 복사해 PowerShell에 붙여 넣고 **Enter**를 누릅니다. 한 단계의 결과를 확인한 뒤 다음 단계로 이동하세요. 화면에 이미 표시된 `PS C:\...>` 같은 글자는 복사하거나 입력하지 않습니다. 게임이 실행된 동안에는 그 창에 PowerShell 명령 대신 **게임 메뉴 번호**를 입력합니다.
+
+### 12-1. 오늘 사용할 세 가지 이름 이해하기
+
+| 이름 | 이번 실습에서 하는 일 |
+|---|---|
+| Docker Desktop | Windows에서 컨테이너를 실행하는 프로그램입니다. |
+| 이미지 | 게임 코드와 Python 실행 환경을 함께 담은 실행 준비물입니다. |
+| 컨테이너 | 이미지를 사용해 실제로 실행 중인 게임입니다. |
+
+Docker Compose는 폴더 안의 `compose.yaml`을 읽어 실행 설정을 적용합니다. 오늘은 설정을 외우는 대신 정해진 명령어를 실행하면 됩니다.
+
+**완료 기준:** 게임은 PowerShell 창 안에서 진행됩니다. 웹브라우저 주소를 입력하거나 별도의 게임 창을 찾지 않아도 됩니다.
+
+### 12-2. Windows 업데이트와 컴퓨터 사양 확인하기
+
+1. **시작 → 설정 → Windows 업데이트**를 엽니다.
+2. 업데이트를 확인하고, 설치 후 재시작이 필요하면 재시작합니다.
+3. **설정 → 시스템 → 정보**를 엽니다.
+4. 설치된 RAM이 **8GB 이상**인지 확인합니다.
+5. **시스템 종류**와 **프로세서** 항목을 확인합니다.
+
+| 확인 결과 | 나중에 받을 Docker 설치 파일 |
+|---|---|
+| 일반적인 Intel/AMD 기반 x64 컴퓨터 | Windows – x86_64 |
+| ARM 기반 컴퓨터 | Windows – Arm |
+
+Docker는 Microsoft의 지원 기간 안에 있는 Windows 버전을 지원합니다. 오래된 Windows 11을 업데이트하지 않은 채 진행하지 마세요. 사양의 정확한 기준은 [Docker 공식 Windows 설치 문서](https://docs.docker.com/desktop/setup/install/windows-install/)에서 확인할 수 있습니다.
+
+### 12-3. 컴퓨터의 가상화가 켜져 있는지 확인하기
+
+1. 키보드에서 **Ctrl + Shift + Esc**를 함께 누릅니다.
+2. 작업 관리자가 열리면 **성능 → CPU**를 선택합니다.
+3. 화면의 **가상화** 항목을 찾습니다.
+4. **사용** 또는 **Enabled**로 표시되면 다음 단계로 갑니다.
+
+`사용 안 함` 또는 `Disabled`라면 BIOS/UEFI에서 가상화를 켜야 합니다. 제조사와 모델마다 메뉴가 다르므로 [Microsoft의 가상화 활성화 안내](https://support.microsoft.com/ko-kr/windows/experience/enable-virtualization-on-windows)에서 자신의 제조사 안내를 확인하세요.
+
+Windows에서 해당 설정 화면으로 들어가는 공통 경로는 **설정 → 시스템 → 복구 → 고급 시작 옵션 → 지금 다시 시작 → 문제 해결 → 고급 옵션 → UEFI 펌웨어 설정 → 다시 시작**입니다. 가상화를 켜고 Windows로 돌아온 뒤 작업 관리자에서 다시 확인합니다.
+
+**완료 기준:** `가상화: 사용`이 보입니다.
+
+### 12-4. 관리자 PowerShell 열기
+
+1. 작업표시줄의 **시작 버튼을 마우스 오른쪽 버튼으로 클릭**합니다.
+2. **터미널(관리자)**를 선택합니다.
+3. “이 앱이 디바이스를 변경하도록 허용하시겠어요?”가 나오면 **예**를 누릅니다.
+4. PowerShell 탭이 열렸는지 확인합니다. 명령줄 앞에 보통 `PS`가 표시됩니다.
+
+다른 종류의 탭이 열렸다면 터미널 상단의 **아래쪽 화살표 → Windows PowerShell**을 선택합니다.
+
+**완료 기준:** 창 제목에 관리자 표시가 있고 PowerShell 명령을 입력할 수 있습니다.
+
+### 12-5. WSL이 이미 설치되어 있는지 확인하기
+
+WSL은 Windows에서 Linux 실행 환경을 사용할 수 있게 하는 구성요소입니다. 관리자 PowerShell에 다음 명령을 입력합니다.
+
+```powershell
+wsl --version
+```
+
+- WSL과 커널의 버전 정보가 나오면 **12-6을 건너뛰고 12-7**로 갑니다.
+- 설치되지 않았다는 안내가 나오면 **12-6**을 진행합니다.
+- 버전 정보 대신 도움말만 나온다면 기존 Windows 내장 WSL일 수 있습니다. **12-7의 업데이트**부터 진행한 뒤 버전 정보를 다시 확인합니다.
+
+`wsl --version`에 나오는 WSL 프로그램 버전과 “WSL 2”라는 실행 방식의 숫자는 다른 의미입니다. 이 실습에서는 최신 WSL로 업데이트해 사용합니다.
+
+### 12-6. WSL이 없는 컴퓨터에 설치하기
+
+**WSL이 설치되어 있지 않을 때만** 관리자 PowerShell에서 실행합니다.
+
+```powershell
+wsl --install --no-distribution
+```
+
+설치가 끝나면 작업 중인 문서를 저장하고 **시작 → 전원 → 다시 시작**으로 컴퓨터를 재시작합니다.
+
+`--no-distribution`은 Ubuntu 같은 별도 Linux 배포판을 함께 설치하지 않는다는 뜻입니다. 이 실습은 Windows PowerShell에서 진행하므로 Ubuntu 설치와 Ubuntu 사용자명·암호 생성은 필요하지 않습니다.
+
+**완료 기준:** 설치가 완료되고 Windows에 다시 로그인했습니다.
+
+### 12-7. WSL 업데이트하고 버전 확인하기
+
+12-4와 같은 방법으로 **관리자 PowerShell**을 열고 한 줄씩 실행합니다.
+
+```powershell
+wsl --update
+```
+
+```powershell
+wsl --set-default-version 2
+```
+
+```powershell
+wsl --version
+```
+
+Docker의 공식 최소 요건은 **WSL 버전 2.1.5 이상**입니다. “최신 버전이 이미 설치되어 있습니다”라는 안내도 정상입니다. 재시작을 요구하면 재시작한 뒤 다시 확인합니다.
+
+**완료 기준:** `wsl --version`에서 WSL 버전이 **2.1.5 이상**으로 표시됩니다. `--no-distribution`으로 설치한 뒤 Linux 배포판 목록이 비어 있는 것 자체는 오류가 아닙니다.
+
+### 12-8. Docker Desktop 설치 파일 받기
+
+1. 웹브라우저에서 [Docker 공식 Windows 설치 페이지](https://docs.docker.com/desktop/setup/install/windows-install/)를 엽니다.
+2. 12-2에서 확인한 컴퓨터 종류에 맞는 **Windows – x86_64** 또는 **Windows – Arm** 다운로드를 선택합니다.
+3. 다운로드가 끝날 때까지 기다립니다.
+4. 파일 탐색기의 **다운로드** 폴더를 엽니다.
+5. 받은 `Docker Desktop Installer.exe`를 실행합니다.
+
+일반적인 Intel/AMD 컴퓨터에서는 **x86_64**를 선택합니다. Arm은 ARM 기반 컴퓨터용이며, 공식 페이지에서 제공 상태를 확인하세요.
+
+### 12-9. WSL 2 방식으로 Docker 설치하기
+
+설치 화면에 선택지가 나오면 다음 기준으로 진행합니다.
+
+| 설치 화면의 항목 | 선택할 내용 |
+|---|---|
+| 설치 대상: `Per-user` / `All users` | 개인 실습 PC라면 기본값인 `Per-user` |
+| 실행 방식 또는 Backend 선택 | `WSL 2` |
+| `Use WSL 2 instead of Hyper-V` 체크박스가 있는 이전 형태의 화면 | 체크 |
+
+설치 화면 모양은 버전에 따라 다릅니다. 최신 화면에서 WSL 2를 선택했다면 위의 체크박스가 따로 없어도 됩니다.
+
+설치를 마치고 재시작을 요청하면 **Close and restart** 등 화면의 안내에 따라 재시작합니다. 관리자 권한을 요청하는 창이 나오면 내용을 확인한 뒤 설치를 진행합니다.
+
+**완료 기준:** 시작 메뉴에서 `Docker Desktop`을 검색할 수 있습니다.
+
+### 12-10. Docker Desktop 처음 실행하기
+
+1. **시작**을 누르고 `Docker Desktop`을 검색해 실행합니다.
+2. 처음 표시되는 이용약관을 확인하고 진행합니다.
+3. 개인 실습 환경에서 로그인 건너뛰기가 제공되면 건너뛰어도 됩니다. 조직이 관리하는 PC는 조직의 로그인 정책을 따릅니다.
+4. Docker 엔진이 시작될 때까지 기다립니다.
+5. **Settings → General**에서 WSL 2 엔진을 사용하는지 확인합니다. `Use WSL 2 based engine` 항목이 보이면 켭니다.
+
+이미 WSL 2가 기본으로 설정된 컴퓨터에서는 해당 항목이 보이지 않을 수 있습니다. Windows 컨테이너 모드로 설정된 경우에는 작업표시줄의 Docker 메뉴에서 **Switch to Linux containers**를 선택합니다.
+
+**완료 기준:** Docker Desktop의 시작 오류가 없고 엔진이 실행 중입니다. Windows Home에서도 이번 실습의 Linux 컨테이너 방식을 사용할 수 있습니다.
+
+### 12-11. 선택: Docker 데이터 저장 위치를 D 드라이브로 바꾸기
+
+**C 드라이브 공간이 부족하고 D 드라이브가 있는 경우**, 이미지 다운로드와 게임 빌드 전에 진행합니다. D 드라이브가 없거나 기본 위치를 사용할 경우 다음 단계로 갑니다.
+
+1. 파일 탐색기에서 **D 드라이브**를 엽니다.
+2. 빈 전용 폴더 `DockerData`를 만듭니다.
+3. Docker Desktop에서 **Settings → Resources → Advanced**를 엽니다.
+4. **Disk image location**에서 `D:\DockerData`를 선택합니다.
+5. **Apply** 또는 **Apply & restart**로 적용하고 엔진이 다시 시작될 때까지 기다립니다.
+
+> 게임 소스를 D 드라이브에 저장하는 것과 Docker 데이터 저장 위치를 D 드라이브로 정하는 것은 별개의 작업입니다. 위 설정은 Docker의 이미지·컨테이너 데이터를 옮기는 설정이며, Windows 구성요소와 Docker 프로그램이 C 드라이브를 전혀 사용하지 않게 만드는 설정은 아닙니다.
+
+위치 변경 항목이 보이지 않으면 임의로 Docker의 데이터 폴더를 옮기거나 지우지 말고 [Docker WSL 2 공식 안내](https://docs.docker.com/desktop/features/wsl/)와 설치 버전을 확인합니다.
+
+### 12-12. Docker가 실제로 작동하는지 확인하기
+
+이제 관리자 PowerShell은 닫아도 됩니다. **시작 → Windows PowerShell 검색 → 실행**으로 일반 PowerShell을 새로 엽니다. 아래 명령을 한 줄씩 실행합니다.
+
+```powershell
+docker version
+```
+
+**확인:** `Client`와 `Server`가 모두 나와야 합니다. `Client`의 운영체제는 Windows여도 정상이며, 컨테이너를 실행하는 `Server` 쪽은 Linux여야 합니다.
+
+```powershell
+docker info --format '{{.OSType}}'
+```
+
+**확인:** `linux`가 출력됩니다.
+
+```powershell
+docker compose version
+```
+
+**확인:** Docker Compose 버전이 출력됩니다. 버전 숫자는 설치 시점에 따라 다릅니다. Compose는 Docker Desktop에 포함되어 있습니다.
+
+```powershell
+docker run --rm hello-world
+```
+
+**확인:** 내려받기가 끝난 뒤 `Hello from Docker!`가 나옵니다. 이 문구를 확인한 뒤 게임 설치로 넘어갑니다.
+
+### 12-13. GitHub에서 게임 ZIP 파일 받기
+
+1. [python-quiz-game 저장소](https://github.com/buildergarlic/python-quiz-game)를 엽니다.
+2. 파일 목록 위의 **Code** 버튼을 누릅니다.
+3. **Download ZIP**을 선택합니다.
+4. 다운로드 폴더에 `python-quiz-game-main.zip`이 생겼는지 확인합니다.
+
+이번 실습에서는 Git 프로그램 설치나 `git clone` 명령이 필요하지 않습니다.
+
+### 12-14. ZIP 압축을 풀고 실제 게임 폴더 찾기
+
+1. 파일 탐색기에서 D 드라이브에 `docker-projects` 폴더를 만듭니다.
+2. ZIP 파일을 마우스 오른쪽 버튼으로 클릭하고 **모두 압축 풀기**를 선택합니다.
+3. 압축을 풀 위치를 `D:\docker-projects`로 지정하고 **압축 풀기**를 누릅니다.
+4. 압축을 푼 뒤 `python-quiz-game-main` 폴더를 엽니다.
+
+**D 드라이브가 없다면:** 위의 위치를 `C:\docker-projects`로 정합니다. 이후에는 파일 탐색기에서 해당 폴더를 열어 진행하므로 명령어를 일일이 수정하지 않아도 됩니다.
+
+파일 탐색기의 **보기 → 표시 → 파일 이름 확장명**을 켜면 파일 이름 뒤의 `.yaml`, `.py`, `.md`까지 확인할 수 있습니다.
+
+열린 폴더에서 다음 파일이 **함께** 보여야 합니다.
+
+- `compose.yaml`
+- `Dockerfile`
+- `main.py`
+- `README.md`
+
+폴더 안에 `python-quiz-game-main`이라는 폴더만 보이면 그 안으로 한 번 더 들어갑니다. ZIP 파일 내부를 보고 있는 상태가 아니라 **압축을 푼 일반 폴더**여야 합니다.
+
+### 12-15. 게임 폴더에서 PowerShell 열기
+
+1. `compose.yaml`, `Dockerfile`, `main.py`가 보이는 파일 탐색기 창을 유지합니다.
+2. 위쪽 **주소 표시줄**을 클릭합니다. 오른쪽 검색창이 아닙니다.
+3. 기존 경로 대신 `powershell`이라고 입력하고 **Enter**를 누릅니다.
+4. 새로 열린 PowerShell에서 다음 두 명령을 차례대로 실행합니다.
+
+```powershell
+Get-Location
+```
+
+예를 들어 `D:\docker-projects\python-quiz-game-main`이 표시됩니다. C 드라이브에 압축을 풀었다면 C로 시작합니다.
+
+```powershell
+Get-ChildItem -Name
+```
+
+**완료 기준:** 출력 목록에 `compose.yaml`, `Dockerfile`, `main.py`가 있습니다. 이 세 파일이 없는 위치에서는 다음 명령을 실행하지 말고 12-14에서 폴더 위치를 다시 확인합니다.
+
+### 12-16. 게임 실행 이미지 만들기
+
+게임 폴더에서 연 PowerShell에 입력합니다.
+
+```powershell
+docker compose build
+```
+
+Docker가 필요한 Python 이미지와 게임 코드를 준비합니다. 처음에는 인터넷에서 파일을 내려받으므로 시간이 걸릴 수 있습니다. 현재 프로젝트는 Dockerfile에 지정된 Python을 사용하므로 Windows에 Python을 별도로 설치하지 않습니다.
+
+**완료 기준:** 빌드가 오류 없이 끝나고 `PS ...>` 입력줄로 돌아옵니다. 빨간 오류나 `failed`가 나오면 아래의 문제 해결 표에서 해당 증상을 먼저 확인합니다.
+
+### 12-17. 퀴즈 게임 실행하기
+
+같은 창에서 실행합니다.
+
+```powershell
+docker compose run --rm quiz
+```
+
+처음 저장 공간을 만드는 경우에는 다음과 같은 안내와 게임 메뉴가 나옵니다.
+
+```text
+📂 저장된 데이터가 없어 기본 퀴즈 8개로 시작합니다.
+```
+
+| 메뉴 번호 | 할 수 있는 일 |
+|---|---|
+| 1 | 퀴즈 풀기 |
+| 2 | 퀴즈 추가 |
+| 3 | 퀴즈 목록 보기 |
+| 4 | 최고 점수 확인 |
+| 5 | 퀴즈 삭제 |
+| 6 | 최근 플레이 기록 보기 |
+| 7 | 종료 |
+
+**완료 기준:** `선택:`이라는 입력 안내가 보입니다. 기존에 실행한 적이 있다면 기본 8개 안내 대신 저장된 데이터를 불러왔다는 안내가 나오는 것이 정상입니다.
+
+### 12-18. 기본 문제 한 개 풀어보기
+
+1. `선택:`에 **1**을 입력하고 Enter를 누릅니다.
+2. `몇 문제를 풀까요?`에 **1**을 입력하고 Enter를 누릅니다.
+3. 화면에 나온 문제와 네 개의 선택지를 읽습니다. 문제는 무작위로 선택됩니다.
+4. `정답 입력 (1-4, 힌트 h):`에 정답이라고 생각하는 **1~4 중 하나**를 입력합니다.
+5. 힌트를 먼저 보고 싶으면 **h**를 입력하고, 그다음 정답 번호를 입력합니다.
+6. 채점 결과를 확인합니다.
+
+처음에는 정답을 맞히는 것보다 **문제 선택 → 답 입력 → 결과 확인**이 동작하는지 확인하는 것이 목적입니다. 한 번의 플레이를 끝내면 결과가 플레이 기록에 저장됩니다.
+
+### 12-19. 코디세이 수업 복습 문제 한 개 추가하기
+
+게임 메뉴의 `선택:`에 **2**를 입력합니다. 그다음 화면의 질문에 맞춰 아래 내용을 **한 칸씩** 입력하고 Enter를 누릅니다.
+
+| 화면에 나오는 입력 안내 | 입력할 내용 |
+|---|---|
+| `문제를 입력하세요:` | `Docker에서 이미지를 만드는 방법을 적는 파일은?` |
+| `선택지 1:` | `Dockerfile` |
+| `선택지 2:` | `README.md` |
+| `선택지 3:` | `main.py` |
+| `선택지 4:` | `state.json` |
+| `정답 번호 (1-4):` | `1` |
+| `힌트 (없으면 그냥 Enter):` | `파일 이름에 Docker가 들어갑니다.` |
+
+**완료 기준:** `퀴즈가 추가되었습니다!`라는 안내가 나옵니다. 처음 제공되는 8개에 이 문제 하나를 추가했다면 총 **9개**입니다. 기존 데이터가 있다면 원래 개수보다 하나 늘어납니다.
+
+`선택:`에 **3**을 입력하여 목록에서 방금 입력한 문제를 확인합니다. 퀴즈 풀기에서는 무작위로 출제되므로, 한 문제만 풀었을 때 새 문제가 반드시 나오는 것은 아닙니다.
+
+### 12-20. 종료 후 다시 실행해서 저장 확인하기
+
+1. 게임 메뉴의 `선택:`에 **7**을 입력합니다.
+2. 종료 안내가 나오고 `PS ...>` 입력줄로 돌아오는지 확인합니다.
+3. 같은 폴더에서 다시 실행합니다.
+
+```powershell
+docker compose run --rm quiz
+```
+
+4. **저장된 데이터를 불러왔습니다**라는 안내를 확인합니다.
+5. 메뉴 **3**에서 추가한 Docker 문제를 확인합니다.
+6. 메뉴 **4**에서 최고 점수를 확인합니다.
+7. 메뉴 **6**에서 앞에서 한 문제를 푼 기록을 확인합니다.
+8. 확인을 마치면 메뉴 **7**로 종료합니다.
+
+이 프로젝트의 저장 파일은 컨테이너 안의 `/data/state.json`이며, 실제 데이터는 **`python-quiz-game_quiz-data`라는 Docker 이름 있는 볼륨**에 보관됩니다. `--rm`은 종료한 실행용 컨테이너를 정리하는 옵션이므로 이 저장 볼륨은 유지됩니다.
+
+종료 후 Docker Desktop의 **Containers** 목록에서 게임 컨테이너가 사라져도 정상입니다. 데이터는 **Volumes**의 해당 볼륨에 남습니다.
+
+**운영 규칙:** 같은 저장 공간을 사용하는 게임은 한 번에 하나만 실행합니다. 여러 창에서 동시에 실행하면 각 게임의 저장 내용이 서로 덮일 수 있습니다.
+
+### 12-21. 다음 수업이나 다음 날 다시 실행하기
+
+최초 설치를 다시 할 필요는 없습니다. 다음 순서만 반복합니다.
+
+1. **Docker Desktop**을 실행하고 엔진 시작을 기다립니다.
+2. 파일 탐색기에서 압축을 풀어 둔 게임 폴더를 엽니다.
+3. 주소 표시줄에 `powershell`을 입력하고 Enter를 누릅니다.
+4. 아래 명령을 실행합니다.
+
+```powershell
+docker compose run --rm quiz
+```
+
+5. 실습을 마치면 게임 메뉴 **7**로 종료합니다.
+
+게임 소스나 Dockerfile을 바꿨을 때는 다시 `docker compose build`를 실행한 뒤 게임을 시작합니다. 평소 재실행에는 빌드가 필요하지 않습니다. ZIP 파일을 새로 다운로드하는 작업도 매번 할 필요가 없습니다.
+
+### 12-22. 선택: 저장 데이터를 파일로 백업하기
+
+먼저 실행 중인 게임을 **메뉴 7로 종료**하고, **저장 실패 경고가 없었는지** 확인합니다. Docker Desktop은 켜 둡니다. 게임 폴더의 PowerShell에서 아래 명령을 **순서대로** 실행합니다.
+
+```powershell
+$quizBackupStamp = Get-Date -Format "yyyyMMdd-HHmmss"
+```
+
+```powershell
+New-Item -ItemType Directory -Path .\backup -Force
+```
+
+```powershell
+docker compose run --rm -v "${PWD}/backup:/backup" quiz cp /data/state.json "/backup/state-$quizBackupStamp.json"
+```
+
+```powershell
+Get-Item ".\backup\state-$quizBackupStamp.json"
+```
+
+**완료 기준:** 게임 폴더 안의 `backup` 폴더에 `state-날짜-시각.json` 파일이 생깁니다. 이 파일을 다른 저장장치에도 복사하면 컴퓨터 문제에 대비할 수 있습니다.
+
+이 명령은 저장 파일을 그대로 복사하므로 한글 데이터의 인코딩을 유지합니다. PowerShell의 `>` 기호로 내용을 출력해 백업하는 방식으로 바꾸지 마세요. `/data/state.json`이 없다는 오류가 나오면 게임을 실행해 한 번 플레이하고 메뉴 7로 종료한 뒤 다시 진행합니다.
+
+### 막혔을 때: 화면의 증상부터 확인하기
+
+| 증상 | 먼저 확인하고 할 일 |
+|---|---|
+| `docker`가 명령으로 인식되지 않음 | Docker Desktop이 설치됐는지 확인합니다. 설치 전부터 열려 있던 PowerShell을 닫고 새로 엽니다. |
+| `Client`만 나오고 `Server` 연결에 실패함 | Docker Desktop을 실행하고 엔진이 시작될 때까지 기다린 뒤 `docker version`을 다시 실행합니다. |
+| `WSL needs updating` 또는 WSL 업데이트 요구 | 관리자 PowerShell에서 `wsl --update`를 실행합니다. 재시작이 필요하면 재시작합니다. |
+| `Virtualization support not detected` | 12-3으로 돌아가 작업 관리자의 가상화 상태와 제조사 안내를 확인합니다. |
+| `no configuration file provided` 또는 설정 파일을 찾을 수 없음 | `Get-Location`과 `Get-ChildItem -Name`으로 현재 위치를 확인합니다. `compose.yaml`이 있는 폴더에서 실행해야 합니다. |
+| `Dockerfile`을 찾을 수 없음 | ZIP을 실제로 풀었는지, `Dockerfile`과 `compose.yaml`이 같은 폴더에 있는지 확인합니다. `Dockerfile.txt`로 이름을 바꾸면 안 됩니다. |
+| `no matching manifest for windows/amd64` 등 Windows 이미지 관련 오류 | Docker 메뉴에서 **Switch to Linux containers**를 선택합니다. `docker info --format '{{.OSType}}'`의 결과가 `linux`인지 확인합니다. |
+| 다운로드가 오래 걸리거나 `timeout`, DNS, 프록시 오류가 남 | 인터넷 연결과 학교·회사 네트워크의 다운로드 허용 여부를 확인합니다. 오류가 끝난 뒤 같은 명령을 다시 실행합니다. |
+| `429`, `toomanyrequests` 또는 이미지 다운로드 제한 | Docker Hub 다운로드 제한일 수 있습니다. Docker Desktop에 본인 계정으로 로그인한 뒤 다시 시도합니다. |
+| 한글이 깨지거나 기호가 네모로 보임 | Windows Terminal의 **PowerShell 탭**에서 다시 실행합니다. 단순한 이모지 글꼴 표시 문제와 실제 한글 데이터 손상을 구분합니다. 깨진 내용을 다시 저장하기 전에 창의 글꼴·표시 상태를 먼저 확인합니다. |
+| `the input device is not a TTY` 또는 게임 입력을 할 수 없음 | 일반 PowerShell 창에서 `docker compose run --rm quiz`를 직접 실행합니다. `-T`를 붙이거나 다른 명령의 출력과 연결하지 않습니다. |
+| `데이터를 파일에 저장하지 못했습니다`라는 저장 실패 안내 | **게임이 아직 실행 중이면 창을 열어 둔 채** 오류 문구를 기록합니다. 디스크 공간 부족 등 원인을 해결한 뒤 메뉴 7로 저장·종료를 다시 시도합니다. 이미 종료된 경우에는 마지막으로 저장에 성공한 파일을 기준으로 확인합니다. 해결되지 않으면 담당 강사에게 문의하고, 기존 볼륨은 삭제하거나 초기화하지 않습니다. |
+| `state.json을 불러오지 못해` 또는 `이번 실행에서는 저장하지 않습니다`라는 안내 | 기존 파일을 보호하기 위해 저장이 중지된 상태입니다. 메뉴 7로 종료한 뒤 오류 문구와 함께 담당 강사에게 문의하고 기존 저장 공간의 읽기·쓰기 권한을 확인합니다. |
+| 종료 후 추가 문제가 보이지 않음 | 같은 `compose.yaml`로 실행했는지, 시작 시 저장 데이터 불러오기 안내가 나왔는지 확인합니다. 다른 PC나 다른 Docker 엔진의 저장 공간과 자동으로 공유되지는 않습니다. |
+
+설치나 저장 문제를 해결하려고 Docker Desktop의 **Reset/초기화**, 볼륨 삭제, 전체 정리 명령을 먼저 실행하지 마세요. 이번 정상 실습 순서에는 저장 데이터 삭제가 포함되지 않습니다.
+
+도움을 요청할 때는 **실행한 명령, `Get-Location`의 결과, 오류 문구 전체**를 함께 전달하면 원인을 찾기 쉽습니다. Windows 사용자 이름 등 공유하고 싶지 않은 정보는 가리고 전달합니다.
+
+### 참여자 완료 체크리스트
+
+- [ ] Docker Desktop이 실행되고 `docker version`에 Client와 Server가 모두 나온다.
+- [ ] `docker info --format '{{.OSType}}'`의 결과가 `linux`다.
+- [ ] `Hello from Docker!`를 확인했다.
+- [ ] `compose.yaml`이 있는 폴더에서 `docker compose build`를 완료했다.
+- [ ] `docker compose run --rm quiz`로 메뉴를 열었다.
+- [ ] 기본 문제 한 개를 풀었다.
+- [ ] 수업 복습 문제 한 개를 추가했다.
+- [ ] 메뉴 7로 종료한 뒤 다시 실행해 추가 문제·점수·플레이 기록을 확인했다.
+- [ ] 다음 날 실행할 폴더 위치와 명령을 알고 있다.
+
+### 공식 문서와 프로젝트 링크
+
+- [프로젝트 원본 저장소](https://github.com/buildergarlic/python-quiz-game)
+- [Docker Desktop: Windows 설치·다운로드·시스템 요건](https://docs.docker.com/desktop/setup/install/windows-install/)
+- [Docker Desktop: WSL 2 설정과 데이터 저장 위치](https://docs.docker.com/desktop/features/wsl/)
+- [Docker Compose: 설치 안내](https://docs.docker.com/compose/install/)
+- [Docker: `docker version` 명령](https://docs.docker.com/reference/cli/docker/version/)
+- [Microsoft: WSL 설치](https://learn.microsoft.com/ko-kr/windows/wsl/install)
+- [Microsoft: WSL 기본 명령과 `--no-distribution`](https://learn.microsoft.com/ko-kr/windows/wsl/basic-commands)
+- [Microsoft: Windows에서 가상화 활성화](https://support.microsoft.com/ko-kr/windows/experience/enable-virtualization-on-windows)
